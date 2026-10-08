@@ -1,0 +1,37 @@
+# @file ci.yml
+# @brief Revisa el estilo y ejecuta las pruebas en varias versiones de Python.
+# @author Santiago Caicedo
+
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  pruebas:
+    name: Python ${{ matrix.python }} (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python: ["3.10", "3.11", "3.12", "3.13"]
+        include:
+          - os: windows-latest
+            python: "3.13"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Instalar
+        run: pip install -e ".[dev]"
+      - name: Estilo
+        run: |
+          ruff check .
+          ruff format --check .
+      - name: Pruebas
+        run: pytest --cov=graficadora --cov-report=term-missing
+        env:
+          MPLBACKEND: Agg
