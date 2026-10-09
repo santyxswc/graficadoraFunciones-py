@@ -3,8 +3,11 @@
 @brief Interfaz de línea de comandos de la graficadora.
 @author Santiago Caicedo
 
+Sin argumentos abre la aplicación de escritorio (si está instalado PySide6).
+
 Ejemplos::
 
+    graficadora
     graficadora funcion "1 - abs(x-3)^(2/3)" --desde -5 --hasta 4
     graficadora relacion 2 3 5 6 10 26 --regla "2*x + 1" --guardar relacion.png
 """
@@ -54,6 +57,9 @@ def main(argumentos: Sequence[str] | None = None) -> int:
     @param argumentos Argumentos sin el nombre del programa; por defecto ``sys.argv[1:]``.
     @return Código de salida: 0 si todo salió bien, 2 si la entrada no es válida.
     """
+    argumentos = sys.argv[1:] if argumentos is None else list(argumentos)
+    if not argumentos:
+        return _abrir_ventana()
     parser = crear_parser()
     args = parser.parse_args(argumentos)
     try:
@@ -66,6 +72,17 @@ def main(argumentos: Sequence[str] | None = None) -> int:
     return 0
 
 
+def _abrir_ventana() -> int:
+    """Abre la aplicación de escritorio, o explica cómo instalarla si falta PySide6."""
+    try:
+        from graficadora.interfaz.app import main as abrir
+    except ImportError:
+        crear_parser().print_help()
+        print('\nPara usar la ventana instale la interfaz: pip install "graficadora[gui]"', file=sys.stderr)
+        return 2
+    return abrir()
+
+
 def _comando_funcion(args: argparse.Namespace):
     from graficadora.graficos import graficar_funcion
 
@@ -73,7 +90,7 @@ def _comando_funcion(args: argparse.Namespace):
     analisis = analizar_extremos(funcion, args.desde, args.hasta)
     for punto in analisis.puntos:
         print(punto.etiqueta())
-    return graficar_funcion(funcion, funcion.texto, analisis)
+    return graficar_funcion(funcion, funcion.texto, analisis, figura=_nueva_figura((9, 5.5)))
 
 
 def _comando_relacion(args: argparse.Namespace):
@@ -85,7 +102,14 @@ def _comando_relacion(args: argparse.Namespace):
     print(f"Pares: {pares}")
     for nombre, cumple in relacion.propiedades().items():
         print(f"{nombre.capitalize()}: {'si' if cumple else 'no'}")
-    return graficar_relacion(relacion, regla.texto)
+    return graficar_relacion(relacion, regla.texto, figura=_nueva_figura((7, 6)))
+
+
+def _nueva_figura(tamano: tuple[float, float]):
+    """Figura administrada por pyplot, para poder mostrarla en una ventana con ``plt.show()``."""
+    import matplotlib.pyplot as plt
+
+    return plt.figure(figsize=tamano)
 
 
 def _mostrar_o_guardar(figura, ruta: str | None) -> None:
