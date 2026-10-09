@@ -85,11 +85,13 @@ class Expresion:
     def __post_init__(self) -> None:
         normalizado = self.texto.strip().replace("^", "**")
         if not normalizado:
-            raise ExpresionInvalida("La expresion esta vacia.")
+            raise ExpresionInvalida("La expresión está vacía.")
         try:
             arbol = ast.parse(normalizado, mode="eval")
         except SyntaxError as error:
-            raise ExpresionInvalida(f"Sintaxis invalida en '{self.texto}'.") from error
+            raise ExpresionInvalida(
+                f"Sintaxis inválida en '{self.texto}'. Recuerde usar * para multiplicar (2*x, no 2x)."
+            ) from error
         _validar(arbol.body)
         object.__setattr__(self, "_arbol", arbol)
 
@@ -130,12 +132,12 @@ def _validar(nodo: ast.AST) -> None:
     elif isinstance(nodo, ast.Call):
         if not isinstance(nodo.func, ast.Name) or nodo.func.id not in FUNCIONES:
             permitidas = ", ".join(sorted(FUNCIONES))
-            raise ExpresionInvalida(f"Funcion no permitida. Use una de: {permitidas}.")
+            raise ExpresionInvalida(f"Función no permitida. Use una de: {permitidas}.")
         if nodo.keywords or len(nodo.args) != 1:
-            raise ExpresionInvalida(f"La funcion '{nodo.func.id}' recibe exactamente un argumento.")
+            raise ExpresionInvalida(f"La función '{nodo.func.id}' recibe exactamente un argumento.")
         _validar(nodo.args[0])
     else:
-        raise ExpresionInvalida(f"Construccion no permitida: {type(nodo).__name__}.")
+        raise ExpresionInvalida(f"Construcción no permitida: {type(nodo).__name__}.")
 
 
 def _evaluar(nodo: ast.AST, x: np.ndarray):
@@ -152,4 +154,4 @@ def _evaluar(nodo: ast.AST, x: np.ndarray):
         return _OPERADORES_UNARIOS[type(nodo.op)](_evaluar(nodo.operand, x))
     if isinstance(nodo, ast.Call):
         return FUNCIONES[nodo.func.id](_evaluar(nodo.args[0], x))
-    raise ExpresionInvalida("Expresion no validada.")  # pragma: no cover
+    raise ExpresionInvalida("Expresión no validada.")  # pragma: no cover

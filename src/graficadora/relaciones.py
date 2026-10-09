@@ -40,7 +40,7 @@ class RelacionBinaria:
         """
         elementos = tuple(sorted(set(conjunto)))
         if not elementos:
-            raise ValueError("El conjunto no puede estar vacio.")
+            raise ValueError("El conjunto no puede estar vacío.")
         miembros = set(elementos)
         imagenes = np.asarray(regla(np.array(elementos, dtype=float)), dtype=float)
         pares = set()

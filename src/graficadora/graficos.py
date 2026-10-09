@@ -13,7 +13,6 @@ from __future__ import annotations
 import math
 from collections.abc import Callable
 
-import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 from matplotlib.figure import Figure
@@ -33,6 +32,7 @@ def graficar_funcion(
     nombre: str,
     analisis: AnalisisIntervalo,
     muestras: int = 2_000,
+    figura: Figure | None = None,
 ) -> Figure:
     """
     Dibuja la función en el intervalo del análisis y marca sus extremos.
@@ -41,6 +41,7 @@ def graficar_funcion(
     @param nombre Texto de la función para el título y la leyenda.
     @param analisis Resultado de ``analizar_extremos``.
     @param muestras Puntos usados para trazar la curva.
+    @param figura Figura donde dibujar (por ejemplo, la de una ventana); si es None se crea una nueva.
     @return La figura de Matplotlib (sin mostrarla).
     """
     xs = np.linspace(analisis.desde, analisis.hasta, muestras)
@@ -48,7 +49,7 @@ def graficar_funcion(
     xs = np.union1d(xs, [punto.x for punto in analisis.puntos])
     ys = funcion(xs)
 
-    figura, ejes = plt.subplots(figsize=(9, 5.5), layout="constrained")
+    figura, ejes = _preparar(figura, (9, 5.5))
     ejes.plot(xs, ys, color="#264653", linewidth=2, label=f"f(x) = {nombre}")
     ejes.axhline(0, color="black", linewidth=0.6)
     ejes.axvline(0, color="black", linewidth=0.6)
@@ -78,19 +79,20 @@ def graficar_funcion(
     return figura
 
 
-def graficar_relacion(relacion: RelacionBinaria, regla: str) -> Figure:
+def graficar_relacion(relacion: RelacionBinaria, regla: str, figura: Figure | None = None) -> Figure:
     """
     Dibuja la relación como un dígrafo: un nodo por elemento y una flecha por par.
 
     @param relacion Relación ya calculada.
     @param regla Texto de la regla para el título.
+    @param figura Figura donde dibujar; si es None se crea una nueva.
     @return La figura de Matplotlib (sin mostrarla).
     """
     grafo = nx.DiGraph()
     grafo.add_nodes_from(relacion.conjunto)
     grafo.add_edges_from(relacion.pares)
 
-    figura, ejes = plt.subplots(figsize=(7, 6), layout="constrained")
+    figura, ejes = _preparar(figura, (7, 6))
     posiciones = nx.circular_layout(grafo)
     nx.draw_networkx(
         grafo,
@@ -110,6 +112,15 @@ def graficar_relacion(relacion: RelacionBinaria, regla: str) -> Figure:
     ejes.set_title(f"R = {{(x, y) en A x A : y = {regla}}}\nA = {{{conjunto}}}\nPares: {pares}")
     ejes.axis("off")
     return figura
+
+
+def _preparar(figura: Figure | None, tamano: tuple[float, float]):
+    """Limpia la figura recibida (o crea una) y devuelve la figura y sus ejes."""
+    if figura is None:
+        figura = Figure(figsize=tamano)
+    figura.clear()
+    figura.set_layout_engine("constrained")
+    return figura, figura.add_subplot()
 
 
 def _numero(valor: float) -> str:

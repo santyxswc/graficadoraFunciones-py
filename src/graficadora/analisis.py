@@ -89,7 +89,7 @@ def analizar_extremos(
     ys = np.asarray(funcion(xs), dtype=float)
     definidos = np.isfinite(ys)
     if not definidos.any():
-        raise ValueError("La funcion no esta definida en ningun punto del intervalo.")
+        raise ValueError("La función no está definida en ningún punto del intervalo.")
 
     paso = (hasta - desde) / (muestras - 1)
     x_max = _refinar(funcion, xs, ys, definidos, paso, desde, hasta, buscar_maximo=True)
