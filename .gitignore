@@ -11,3 +11,6 @@ dist/
 htmlcov/
 .vscode/
 .idea/
+
+# Empaquetado
+*.spec

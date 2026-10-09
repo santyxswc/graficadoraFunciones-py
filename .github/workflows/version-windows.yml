@@ -1,0 +1,47 @@
+# @file version-windows.yml
+# @brief Crea Graficadora.exe para Windows (no necesita instalar Python).
+# @author Santiago Caicedo
+#
+# - Manual: Actions → "Versión para Windows" → Run workflow, y descargar el .zip del resultado.
+# - Al publicar una etiqueta vX.Y.Z, además crea un Release con el .zip.
+
+name: Versión para Windows
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Instalar
+        run: pip install -e ".[dev,gui]" pyinstaller
+      - name: Pruebas
+        run: pytest -q
+        env:
+          MPLBACKEND: Agg
+          QT_QPA_PLATFORM: offscreen
+      - name: Crear el ejecutable
+        run: pyinstaller --noconfirm --windowed --name Graficadora --exclude-module tkinter packaging/graficadora_gui.py
+      - name: Comprimir
+        shell: pwsh
+        run: Compress-Archive -Path dist/Graficadora -DestinationPath dist/Graficadora-windows.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Graficadora-windows
+          path: dist/Graficadora-windows.zip
+      - name: Publicar Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${{ github.ref_name }}" dist/Graficadora-windows.zip --generate-notes --title "Graficadora ${{ github.ref_name }}"
